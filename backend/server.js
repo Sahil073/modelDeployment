@@ -12,7 +12,7 @@ const app = express();
 app.use(cors());
 
 // ✅ Serve index.html at root
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // ✅ Store uploads in memory temp folder, auto-cleanup after response
 const upload = multer({ dest: "uploads/" });
