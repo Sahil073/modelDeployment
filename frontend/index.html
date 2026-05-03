@@ -1,111 +1,489 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Tumor Detection AI</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>NeuroScan AI — Brain Tumor Classifier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --bg: #0a0c10;
+            --surface: #111318;
+            --surface2: #1a1d24;
+            --border: #2a2d35;
+            --accent: #00e5ff;
+            --accent2: #7c3aed;
+            --danger: #ff4757;
+            --safe: #2ed573;
+            --text: #e8eaf0;
+            --muted: #6b7280;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Animated grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Glow orbs */
+        body::after {
+            content: '';
+            position: fixed;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%);
+            top: -100px; right: -100px;
+            pointer-events: none;
+            z-index: 0;
+            animation: orbFloat 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes orbFloat {
+            from { transform: translate(0, 0); }
+            to { transform: translate(-30px, 30px); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            animation: fadeDown 0.6s ease both;
+        }
+
+        .logo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,229,255,0.08);
+            border: 1px solid rgba(0,229,255,0.2);
+            border-radius: 999px;
+            padding: 6px 16px;
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+            color: var(--accent);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .logo-badge::before {
+            content: '';
+            width: 6px; height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--accent);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            line-height: 1.15;
+            margin-bottom: 8px;
+        }
+
+        h1 span {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--muted);
+            font-weight: 300;
+        }
+
+        /* Card */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            animation: fadeUp 0.6s ease 0.15s both;
+        }
+
+        /* Upload zone */
+        .upload-zone {
+            border: 1.5px dashed var(--border);
+            border-radius: 14px;
+            padding: 28px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: var(--surface2);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: var(--accent);
+            background: rgba(0,229,255,0.04);
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .upload-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+            display: block;
+            opacity: 0.6;
+        }
+
+        .upload-label {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .upload-label strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Preview */
+        #previewWrap {
+            display: none;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            position: relative;
+            border: 1px solid var(--border);
+        }
+
+        #preview {
+            width: 100%;
+            display: block;
+            max-height: 240px;
+            object-fit: cover;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: rgba(0,0,0,0.7);
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 28px; height: 28px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Sora', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--accent), #0099bb);
+            color: #000;
+            letter-spacing: 0.3px;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(0,229,255,0.25);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading */
+        .loading-bar {
+            display: none;
+            margin-top: 16px;
+            height: 3px;
+            background: var(--surface2);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .loading-bar.active { display: block; }
+
+        .loading-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent2), var(--accent));
+            border-radius: 999px;
+            animation: loadPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes loadPulse {
+            0% { width: 0%; margin-left: 0; }
+            50% { width: 70%; margin-left: 15%; }
+            100% { width: 0%; margin-left: 100%; }
+        }
+
+        .loading-text {
+            display: none;
+            text-align: center;
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 10px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .loading-text.active { display: block; }
+
+        /* Result box */
+        #resultBox {
+            display: none;
+            margin-top: 20px;
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid;
+            animation: fadeUp 0.4s ease;
+        }
+
+        #resultBox.tumor {
+            background: rgba(255,71,87,0.06);
+            border-color: rgba(255,71,87,0.3);
+        }
+
+        #resultBox.no-tumor {
+            background: rgba(46,213,115,0.06);
+            border-color: rgba(46,213,115,0.3);
+        }
+
+        .result-label {
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            opacity: 0.6;
+        }
+
+        .result-value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        #resultBox.tumor .result-value { color: var(--danger); }
+        #resultBox.no-tumor .result-value { color: var(--safe); }
+
+        .result-sub {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            text-align: center;
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 20px;
+            line-height: 1.6;
+            animation: fadeUp 0.6s ease 0.3s both;
+        }
+
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 500px) {
+            h1 { font-size: 26px; }
+            .card { padding: 20px; }
+        }
+    </style>
 </head>
+<body>
 
-<body style="margin:0; font-family: Arial, sans-serif; background: linear-gradient(to right, #eef2f3, #dfe9f3);">
-
-    <div style="display:flex; justify-content:center; align-items:center; height:100vh;">
-
-        <div style="width:400px; background:white; padding:30px; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,0.1); text-align:center;">
-
-            <h2 style="margin-bottom:10px; color:#2c3e50;">Brain Tumor Classifier</h2>
-            <p style="font-size:14px; color:gray; margin-bottom:20px;">
-                Upload MRI scan to detect tumor presence
-            </p>
-
-            <!-- Upload Box -->
-            <div style="border:2px dashed #3498db; padding:20px; border-radius:10px; margin-bottom:15px;">
-                <input type="file" id="imageInput" accept="image/*" onchange="previewImage()" />
-                <p style="font-size:12px; color:gray;">Supported: JPG, PNG</p>
-            </div>
-
-            <!-- Image Preview -->
-            <img id="preview" style="display:none; width:100%; border-radius:10px; margin-bottom:15px;" />
-
-            <!-- Button -->
-            <button type="button" onclick="uploadImage()"
-                style="background:#3498db; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; width:100%; font-size:16px;">
-                Predict
-            </button>
-
-            <!-- Loading -->
-            <p id="loading" style="display:none; margin-top:15px; color:#555;">
-                Processing image...
-            </p>
-
-            <!-- Result -->
-            <div id="resultBox"
-                style="display:none; margin-top:20px; padding:15px; border-radius:10px; font-weight:bold;">
-                <span id="resultText"></span>
-            </div>
-
-        </div>
-
+<div class="container">
+    <div class="header">
+        <div class="logo-badge">AI Medical Imaging</div>
+        <h1>Neuro<span>Scan</span> AI</h1>
+        <p class="subtitle">Deep learning brain tumor detection from MRI scans</p>
     </div>
 
-    <script>
-        function previewImage() {
-            const fileInput = document.getElementById("imageInput");
-            const file = fileInput.files[0];
+    <div class="card">
+        <!-- Upload zone -->
+        <div class="upload-zone" id="uploadZone">
+            <input type="file" id="imageInput" accept="image/*" onchange="handleFile(this.files[0])" />
+            <span class="upload-icon">🧠</span>
+            <div class="upload-label">
+                <strong>Click to upload</strong> or drag & drop<br/>
+                MRI scan (JPG, PNG)
+            </div>
+        </div>
 
-            if (file) {
-                const preview = document.getElementById("preview");
-                preview.src = URL.createObjectURL(file);
-                preview.style.display = "block";
-            }
+        <!-- Preview -->
+        <div id="previewWrap">
+            <img id="preview" alt="MRI preview" />
+            <button class="preview-remove" onclick="clearImage()" title="Remove">✕</button>
+        </div>
+
+        <!-- Predict button -->
+        <button class="btn" id="predictBtn" onclick="uploadImage()" disabled>
+            Analyze MRI Scan
+        </button>
+
+        <!-- Loading -->
+        <div class="loading-bar" id="loadingBar"><div class="loading-bar-fill"></div></div>
+        <div class="loading-text" id="loadingText">Running inference...</div>
+
+        <!-- Result -->
+        <div id="resultBox">
+            <div class="result-label">Diagnosis Result</div>
+            <div class="result-value" id="resultText"></div>
+            <div class="result-sub" id="resultSub"></div>
+        </div>
+    </div>
+
+    <p class="disclaimer">
+        ⚠️ For research & educational purposes only.<br/>
+        Not a substitute for professional medical diagnosis.
+    </p>
+</div>
+
+<script>
+    // ✅ Auto-detects backend URL — works on any device
+    const BACKEND_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+        ? 'http://127.0.0.1:5000'
+        : window.location.origin.replace(/:\d+$/, '') + ':5000';
+
+    function handleFile(file) {
+        if (!file) return;
+        const preview = document.getElementById('preview');
+        const previewWrap = document.getElementById('previewWrap');
+        const uploadZone = document.getElementById('uploadZone');
+        preview.src = URL.createObjectURL(file);
+        previewWrap.style.display = 'block';
+        uploadZone.style.display = 'none';
+        document.getElementById('predictBtn').disabled = false;
+        document.getElementById('resultBox').style.display = 'none';
+    }
+
+    function clearImage() {
+        document.getElementById('preview').src = '';
+        document.getElementById('previewWrap').style.display = 'none';
+        document.getElementById('uploadZone').style.display = 'block';
+        document.getElementById('imageInput').value = '';
+        document.getElementById('predictBtn').disabled = true;
+        document.getElementById('resultBox').style.display = 'none';
+    }
+
+    // Drag and drop
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) handleFile(file);
+    });
+
+    async function uploadImage() {
+        const fileInput = document.getElementById('imageInput');
+        let file = fileInput.files[0];
+
+        // If cleared via drag-drop, get from preview src isn't possible, need original
+        if (!file && document.getElementById('preview').src) {
+            alert('Please re-select the image');
+            return;
+        }
+        if (!file) { alert('Please select an image'); return; }
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        // UI: loading state
+        document.getElementById('loadingBar').classList.add('active');
+        document.getElementById('loadingText').classList.add('active');
+        document.getElementById('predictBtn').disabled = true;
+        document.getElementById('resultBox').style.display = 'none';
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/predict`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error(`Server error: ${response.status}`);
+            const data = await response.json();
+
+            const resultBox = document.getElementById('resultBox');
+            const resultText = document.getElementById('resultText');
+            const resultSub = document.getElementById('resultSub');
+
+            const isTumor = data.prediction.toLowerCase().includes('tumor') &&
+                            !data.prediction.toLowerCase().includes('no');
+
+            resultBox.className = isTumor ? 'tumor' : 'no-tumor';
+            resultText.textContent = data.prediction;
+            resultSub.textContent = isTumor
+                ? 'Abnormality detected. Please consult a medical professional.'
+                : 'No abnormality detected in the scan.';
+            resultBox.style.display = 'block';
+
+        } catch (error) {
+            console.error(error);
+            alert('Error: Could not reach the prediction server. Make sure the backend is running.');
         }
 
-        async function uploadImage() {
-            console.log("Upload triggered");
-
-            const fileInput = document.getElementById("imageInput");
-            const file = fileInput.files[0];
-
-            if (!file) {
-                alert("Please select an image");
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append("image", file);
-
-            // UI updates
-            document.getElementById("loading").style.display = "block";
-            document.getElementById("resultBox").style.display = "none";
-
-            try {
-                const response = await fetch("http://13.60.184.61:5000/predict", {
-                    method: "POST",
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                const resultBox = document.getElementById("resultBox");
-                const resultText = document.getElementById("resultText");
-
-                // Conditional styling
-                if (data.prediction.toLowerCase().includes("tumor")) {
-                    resultBox.style.background = "#fdecea";
-                    resultBox.style.color = "#c0392b";
-                } else {
-                    resultBox.style.background = "#eafaf1";
-                    resultBox.style.color = "#27ae60";
-                }
-
-                resultText.innerText = "Prediction: " + data.prediction;
-                resultBox.style.display = "block";
-
-            } catch (error) {
-                console.error(error);
-                alert("Error connecting to backend");
-            }
-
-            document.getElementById("loading").style.display = "none";
-        }
-    </script>
-
+        document.getElementById('loadingBar').classList.remove('active');
+        document.getElementById('loadingText').classList.remove('active');
+        document.getElementById('predictBtn').disabled = false;
+    }
+</script>
 </body>
 </html>
