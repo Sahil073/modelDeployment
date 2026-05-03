@@ -12,19 +12,15 @@ const upload = multer({ dest: "uploads/" });
 
 app.post("/predict", upload.single("image"), async (req, res) => {
     try {
-        console.log("File received:", req.file);
-
-        // Send file to ML API
         const formData = new FormData();
         formData.append("file", fs.createReadStream(req.file.path));
 
         const response = await axios.post(
-            "http://13.60.184.61/5001/predict",  // ML API
+            "http://13.60.184.61:5001/predict",  // ✅ FIXED
             formData,
             { headers: formData.getHeaders() }
         );
 
-        // Send ML result back to frontend
         res.json({
             prediction: response.data.result
         });
@@ -35,6 +31,6 @@ app.post("/predict", upload.single("image"), async (req, res) => {
     }
 });
 
-app.listen(5000, '0.0.0.0', () => {
+app.listen(5000, "0.0.0.0", () => {
     console.log("Server running on port 5000");
 });
