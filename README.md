@@ -13,7 +13,7 @@
 ## 📸 Demo
 
 ```
-http://YOUR_EC2_PUBLIC_IP:5000
+http://13.60.184.61:3000
 ```
 
 Upload any brain MRI scan (JPG/PNG) → click **Analyze MRI Scan** → get **Tumor / No Tumor** result instantly.
